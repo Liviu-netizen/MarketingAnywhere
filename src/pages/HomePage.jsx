@@ -80,10 +80,10 @@ export default function HomePage() {
                         {categories.map((cat) => (
                             <Link
                                 key={cat.id}
-                                to={`/ search ? category = ${ cat.id } `}
+                                to={`/search?category=${cat.id}`}
                                 className="flex flex-col items-center gap-2 group cursor-pointer"
                             >
-                                <div className={`w - 16 h - 16 rounded - 2xl bg - ${ cat.color } -100 dark: bg - ${ cat.color } -900 / 20 flex items - center justify - center text - ${ cat.color } -600 dark: text - ${ cat.color } -400 group - hover: bg - primary group - hover: text - white transition - colors duration - 300`}>
+                                <div className={`w-16 h-16 rounded-2xl bg-${cat.color}-100 dark:bg-${cat.color}-900/20 flex items-center justify-center text-${cat.color}-600 dark:text-${cat.color}-400 group-hover:bg-primary group-hover:text-white transition-colors duration-300`}>
                                     <span className="material-symbols-outlined text-[28px]">{cat.icon}</span>
                                 </div>
                                 <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{cat.name}</span>
@@ -99,7 +99,7 @@ export default function HomePage() {
                         {topRated.map((agency) => (
                             <Link
                                 key={agency.id}
-                                to={`/ agency / ${ agency.id } `}
+                                to={`/agency/${agency.id}`}
                                 className="flex gap-4 p-3 rounded-xl bg-surface-light dark:bg-surface-dark shadow-sm border border-gray-100 dark:border-gray-800"
                             >
                                 <div

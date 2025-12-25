@@ -13,17 +13,23 @@ export default function SearchPage() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        async function fetchResults() {
+        const fetchResults = async () => {
             setLoading(true)
             const { data } = await getAgencies({
-                location: activeFilters.includes('New York') ? 'New York' : null,
+                q: searchQuery,
+                location: activeFilters.length > 0 ? activeFilters[0] : null,
                 category: searchParams.get('category')
             })
             if (data) setAgencies(data)
             setLoading(false)
         }
-        fetchResults()
-    }, [activeFilters, searchParams])
+
+        const timer = setTimeout(() => {
+            fetchResults()
+        }, 500)
+
+        return () => clearTimeout(timer)
+    }, [searchQuery, activeFilters, searchParams])
 
     const removeFilter = (filter) => {
         setActiveFilters(activeFilters.filter(f => f !== filter))

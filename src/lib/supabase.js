@@ -46,18 +46,19 @@ export const getCurrentUser = async () => {
     return user
 }
 
-// Database helpers for agencies
 export const getAgencies = async (filters = {}) => {
     let query = supabase
         .from('agencies')
         .select('*')
-        .eq('is_active', true)
 
+    if (filters.q) {
+        query = query.or(`name.ilike.%${filters.q}%,description.ilike.%${filters.q}%`)
+    }
     if (filters.location) {
-        query = query.ilike('location', `%${filters.location}%`)
+        query = query.or(`location->>city.ilike.%${filters.location}%,location->>country.ilike.%${filters.location}%`)
     }
     if (filters.category) {
-        query = query.contains('services', [filters.category])
+        query = query.contains('tags', [filters.category])
     }
     if (filters.minRating) {
         query = query.gte('rating', filters.minRating)
