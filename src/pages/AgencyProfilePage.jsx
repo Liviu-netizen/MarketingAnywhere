@@ -1,11 +1,39 @@
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { mockAgencies } from '../data/mockAgencies'
+import { getAgencyById, getAgencyReviews } from '../lib/supabase'
 
 export default function AgencyProfilePage() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const [agency, setAgency] = useState(null)
+    const [reviews, setReviews] = useState([])
+    const [loading, setLoading] = useState(true)
 
-    const agency = mockAgencies.find(a => a.id === id) || mockAgencies[0]
+    useEffect(() => {
+        async function loadData() {
+            const [{ data: agencyData }, { data: reviewsData }] = await Promise.all([
+                getAgencyById(id),
+                getAgencyReviews(id)
+            ])
+            if (agencyData) setAgency(agencyData)
+            if (reviewsData) setReviews(reviewsData)
+            setLoading(false)
+        }
+        loadData()
+    }, [id])
+
+    if (loading) return (
+        <div className="flex justify-center items-center h-screen bg-background-light dark:bg-background-dark">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+    )
+
+    if (!agency) return (
+        <div className="flex flex-col items-center justify-center h-screen bg-background-light dark:bg-background-dark">
+            <p className="text-gray-500 font-bold mb-4">Agency not found</p>
+            <button onClick={() => navigate(-1)} className="text-primary font-bold">Go Back</button>
+        </div>
+    )
 
     return (
         <div className="relative flex min-h-screen flex-col overflow-x-hidden pb-24 bg-background-light dark:bg-background-dark">
@@ -66,11 +94,11 @@ export default function AgencyProfilePage() {
                 )}
                 <div className="flex items-center gap-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800 px-3 py-1.5">
                     <span className="material-symbols-outlined text-[16px] text-green-500">attach_money</span>
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Budget: {agency.budget_level}</p>
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Budget: {agency.budget_level || '$$'}</p>
                 </div>
                 <div className="flex items-center gap-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800 px-3 py-1.5">
                     <span className="material-symbols-outlined text-[16px] text-purple-500">computer</span>
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Focus: {agency.focus}</p>
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Focus: {agency.focus || 'General'}</p>
                 </div>
             </section>
 
@@ -81,14 +109,14 @@ export default function AgencyProfilePage() {
                         <span className="material-symbols-outlined text-primary text-xl">trending_up</span>
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Avg RoAS</p>
                     </div>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{agency.stats.avg_roas}</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{agency.stats?.avg_roas || 'N/A'}</p>
                 </div>
                 <div className="flex flex-col gap-1 rounded-xl bg-white dark:bg-[#1c2333] p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
                     <div className="flex items-center gap-2 mb-1">
                         <span className="material-symbols-outlined text-primary text-xl">history</span>
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Experience</p>
                     </div>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{agency.stats.years_experience}+ Years</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{agency.stats?.years_experience || '0'}+ Years</p>
                 </div>
             </section>
 
@@ -119,7 +147,7 @@ export default function AgencyProfilePage() {
                     <a className="text-xs font-medium text-primary hover:text-primary/80" href="#">See All</a>
                 </div>
                 <div className="flex gap-4 overflow-x-auto px-4 pb-4 no-scrollbar snap-x">
-                    {agency.services.map((service, idx) => (
+                    {agency.services && agency.services.length > 0 ? agency.services.map((service, idx) => (
                         <div key={idx} className="flex-none w-[160px] snap-center flex flex-col gap-3 rounded-xl bg-white dark:bg-[#1c2333] p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
                             <div className={`size-10 rounded-lg ${['bg-blue-50 dark:bg-blue-900/20 text-primary', 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400', 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'][idx % 3]} flex items-center justify-center`}>
                                 <span className="material-symbols-outlined">{['search', 'campaign', 'ads_click'][idx % 3]}</span>
@@ -132,7 +160,9 @@ export default function AgencyProfilePage() {
                                 <span className="text-xs font-medium text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">From ${(service.price_from / 1000).toFixed(0)}k/mo</span>
                             </div>
                         </div>
-                    ))}
+                    )) : (
+                        <p className="px-4 text-xs text-slate-500 italic">No services listed.</p>
+                    )}
                 </div>
             </section>
 
@@ -146,25 +176,32 @@ export default function AgencyProfilePage() {
                     </div>
                 </div>
                 <div className="flex flex-col gap-4">
-                    <div className="flex gap-4 p-4 rounded-xl bg-white dark:bg-[#1c2333] border border-slate-100 dark:border-slate-800 shadow-sm">
-                        <div className="shrink-0">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/30 to-purple-500/30" />
-                        </div>
-                        <div className="flex flex-col gap-1 w-full">
-                            <div className="flex justify-between items-start">
-                                <h5 className="text-sm font-bold text-slate-900 dark:text-white">Recent Client</h5>
-                                <span className="text-xs text-slate-400">2d ago</span>
+                    {reviews.length > 0 ? (
+                        <div className="flex gap-4 p-4 rounded-xl bg-white dark:bg-[#1c2333] border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <div className="shrink-0">
+                                <div
+                                    className="h-10 w-10 rounded-full bg-cover bg-center bg-gradient-to-br from-primary/30 to-purple-500/30"
+                                    style={reviews[0].profiles?.avatar_url ? { backgroundImage: `url("${reviews[0].profiles.avatar_url}")` } : {}}
+                                />
                             </div>
-                            <div className="flex gap-0.5 mb-1">
-                                {[1, 2, 3, 4, 5].map(i => (
-                                    <span key={i} className="material-symbols-outlined text-[14px] text-yellow-500 filled">star</span>
-                                ))}
+                            <div className="flex flex-col gap-1 w-full">
+                                <div className="flex justify-between items-start">
+                                    <h5 className="text-sm font-bold text-slate-900 dark:text-white">{reviews[0].profiles?.full_name || reviews[0].user_name || 'Recent Client'}</h5>
+                                    <span className="text-xs text-slate-400">{new Date(reviews[0].created_at).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex gap-0.5 mb-1">
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <span key={i} className={`material-symbols-outlined text-[14px] text-yellow-500 ${i <= reviews[0].rating ? 'filled' : ''}`}>star</span>
+                                    ))}
+                                </div>
+                                <p className="text-sm text-slate-600 dark:text-slate-300 leading-normal">
+                                    {reviews[0].text}
+                                </p>
                             </div>
-                            <p className="text-sm text-slate-600 dark:text-slate-300 leading-normal">
-                                Excellent work! They really understand our industry and delivered beyond expectations.
-                            </p>
                         </div>
-                    </div>
+                    ) : (
+                        <p className="text-sm text-slate-500 italic px-4">No reviews yet.</p>
+                    )}
                     <Link
                         to={`/agency/${id}/reviews`}
                         className="w-full py-3 text-sm font-medium text-primary hover:text-primary/80 transition-colors text-center block"

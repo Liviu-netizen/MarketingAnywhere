@@ -1,30 +1,44 @@
+import { useState, useEffect } from 'react'
 import MobileContainer from '../components/layout/MobileContainer'
 import BottomNav from '../components/layout/BottomNav'
 import { Link } from 'react-router-dom'
+import { getUserBookings } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 export default function BookingsPage() {
-    // Mock bookings
-    const bookings = [
-        {
-            id: 1,
-            agency: { name: 'Apex Digital Strategies', logo_url: null },
-            service: 'SEO Consultation',
-            date: '2024-12-28',
-            time: '10:00 AM',
-            status: 'upcoming'
-        },
-        {
-            id: 2,
-            agency: { name: 'Growth Gurus', logo_url: null },
-            service: 'Strategy Review',
-            date: '2024-12-20',
-            time: '2:00 PM',
-            status: 'completed'
-        }
-    ]
+    const { user } = useAuth()
+    const [bookings, setBookings] = useState([])
+    const [loading, setLoading] = useState(true)
 
-    const upcomingBookings = bookings.filter(b => b.status === 'upcoming')
-    const pastBookings = bookings.filter(b => b.status === 'completed')
+    useEffect(() => {
+        async function loadBookings() {
+            if (!user) {
+                setLoading(false)
+                return
+            }
+            const { data } = await getUserBookings(user.id)
+            if (data) setBookings(data)
+            setLoading(false)
+        }
+        loadBookings()
+    }, [user])
+
+    const upcomingBookings = bookings.filter(b => b.status === 'pending' || b.status === 'confirmed')
+    const pastBookings = bookings.filter(b => b.status === 'completed' || b.status === 'cancelled')
+
+    if (loading) {
+        return (
+            <MobileContainer className="bg-background-light dark:bg-background-dark">
+                <header className="sticky top-0 z-20 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-4 py-4">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Bookings</h1>
+                </header>
+                <main className="flex-1 p-4 flex items-center justify-center">
+                    <p className="text-slate-500 dark:text-slate-400">Loading bookings...</p>
+                </main>
+                <BottomNav />
+            </MobileContainer>
+        )
+    }
 
     return (
         <MobileContainer className="bg-background-light dark:bg-background-dark">

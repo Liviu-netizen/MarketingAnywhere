@@ -1,11 +1,34 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import MobileContainer from '../components/layout/MobileContainer'
 import BottomNav from '../components/layout/BottomNav'
-import { mockAgencies } from '../data/mockAgencies'
+import { getSavedAgencies } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 export default function SavedPage() {
-    // Mock saved agencies (in real app, would come from Supabase)
-    const savedAgencies = mockAgencies.filter(a => a.is_registered).slice(0, 4)
+    const { user } = useAuth()
+    const [savedAgencies, setSavedAgencies] = useState([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        async function loadSaved() {
+            if (!user) {
+                setLoading(false)
+                setSavedAgencies([]) // Ensure savedAgencies is empty if no user
+                return
+            }
+            setLoading(true) // Set loading to true before fetching
+            const { data, error } = await getSavedAgencies(user.id)
+            if (error) {
+                console.error("Error fetching saved agencies:", error)
+                setSavedAgencies([])
+            } else if (data) {
+                setSavedAgencies(data)
+            }
+            setLoading(false)
+        }
+        loadSaved()
+    }, [user])
 
     return (
         <MobileContainer className="bg-background-light dark:bg-background-dark">
@@ -37,7 +60,7 @@ export default function SavedPage() {
                         {savedAgencies.map((agency) => (
                             <Link
                                 key={agency.id}
-                                to={`/agency/${agency.id}`}
+                                to={`/ agency / ${agency.id} `}
                                 className="flex flex-col bg-white dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800"
                             >
                                 <div

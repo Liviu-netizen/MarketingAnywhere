@@ -1,34 +1,33 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { mockAgencies } from '../data/mockAgencies'
+import { getAgencyById, getMessages, sendMessage as sendSupabaseMessage, subscribeToMessages } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 export default function ChatPage() {
     const { agencyId } = useParams()
+    const { user } = useAuth()
     const navigate = useNavigate()
     const messagesEndRef = useRef(null)
     const [message, setMessage] = useState('')
-    const [messages, setMessages] = useState([
-        {
-            id: 1,
-            sender: 'agency',
-            text: "Hi there! Thanks for reaching out. How can we help you today?",
-            time: '10:30 AM'
-        },
-        {
-            id: 2,
-            sender: 'user',
-            text: "Hi! I'm interested in your SEO services. Can you tell me more about your packages?",
-            time: '10:32 AM'
-        },
-        {
-            id: 3,
-            sender: 'agency',
-            text: "Of course! We offer three main SEO packages starting from $1,000/month. Would you like me to send you our detailed pricing guide?",
-            time: '10:33 AM'
-        }
-    ])
+    const [agency, setAgency] = useState(null)
+    const [messages, setMessages] = useState([])
+    const [conversationId, setConversationId] = useState(null)
+    const [loading, setLoading] = useState(true)
 
-    const agency = agencyId ? mockAgencies.find(a => a.id === agencyId) : null
+    useEffect(() => {
+        async function loadChat() {
+            if (!agencyId) return
+
+            const { data: agencyData } = await getAgencyById(agencyId)
+            setAgency(agencyData)
+
+            // In a real app, we'd first find/create a conversation ID
+            // For now, let's assume we have one or just fetch messages for this agency/user pair
+            // We'll simulate fetching messages from a 'messages' table linked to a conversation
+            setLoading(false)
+        }
+        loadChat()
+    }, [agencyId])
 
     // Check if agency is registered for in-app chat
     const isRegistered = agency?.is_registered
@@ -41,28 +40,20 @@ export default function ChatPage() {
         scrollToBottom()
     }, [messages])
 
-    const sendMessage = () => {
-        if (!message.trim()) return
+    const handleSendMessage = async () => {
+        if (!message.trim() || !user || !agencyId) return
 
-        const newMessage = {
-            id: messages.length + 1,
-            sender: 'user',
-            text: message,
-            time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-        }
+        const { data, error } = await sendSupabaseMessage(conversationId, message, user.id)
 
-        setMessages([...messages, newMessage])
-        setMessage('')
-
-        // Simulate agency response
-        setTimeout(() => {
+        if (data) {
             setMessages(prev => [...prev, {
-                id: prev.length + 1,
-                sender: 'agency',
-                text: "Thanks for your message! One of our team members will get back to you shortly.",
-                time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                id: data.id,
+                sender: 'user',
+                text: data.content,
+                time: new Date(data.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             }])
-        }, 1500)
+            setMessage('')
+        }
     }
 
     // If agency not registered, show redirect
@@ -136,8 +127,8 @@ export default function ChatPage() {
                     >
                         <div
                             className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.sender === 'user'
-                                    ? 'bg-primary text-white rounded-br-sm'
-                                    : 'bg-white dark:bg-surface-dark text-slate-900 dark:text-white rounded-bl-sm shadow-sm border border-slate-100 dark:border-slate-700'
+                                ? 'bg-primary text-white rounded-br-sm'
+                                : 'bg-white dark:bg-surface-dark text-slate-900 dark:text-white rounded-bl-sm shadow-sm border border-slate-100 dark:border-slate-700'
                                 }`}
                         >
                             <p className="text-sm leading-relaxed">{msg.text}</p>
@@ -161,13 +152,13 @@ export default function ChatPage() {
                             type="text"
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                             placeholder="Type a message..."
                             className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-sm border-none focus:ring-2 focus:ring-primary text-slate-900 dark:text-white placeholder:text-slate-400"
                         />
                     </div>
                     <button
-                        onClick={sendMessage}
+                        onClick={handleSendMessage}
                         disabled={!message.trim()}
                         className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white disabled:opacity-50 transition-opacity"
                     >

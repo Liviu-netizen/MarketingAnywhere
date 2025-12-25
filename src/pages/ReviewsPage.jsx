@@ -1,14 +1,29 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { mockAgencies, mockReviews } from '../data/mockAgencies'
+import MobileContainer from '../components/layout/MobileContainer'
+import { getAgencyById, getAgencyReviews } from '../lib/supabase'
 
 export default function ReviewsPage() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const [agency, setAgency] = useState(null)
+    const [reviews, setReviews] = useState([])
+    const [loading, setLoading] = useState(true)
     const [activeFilter, setActiveFilter] = useState('All')
 
-    const agency = mockAgencies.find(a => a.id === id) || mockAgencies[0]
-    const reviews = mockReviews.filter(r => r.agency_id === id || r.agency_id === agency.id)
+    useEffect(() => {
+        async function loadData() {
+            setLoading(true)
+            const [{ data: agencyData }, { data: reviewsData }] = await Promise.all([
+                getAgencyById(id),
+                getAgencyReviews(id)
+            ])
+            if (agencyData) setAgency(agencyData)
+            if (reviewsData) setReviews(reviewsData)
+            setLoading(false)
+        }
+        loadData()
+    }, [id])
 
     const ratingDistribution = {
         5: 70,
@@ -76,8 +91,8 @@ export default function ReviewsPage() {
                             key={filter}
                             onClick={() => setActiveFilter(filter)}
                             className={`flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full px-4 transition-colors ${activeFilter === filter
-                                    ? 'bg-primary text-white shadow-sm'
-                                    : 'bg-gray-100 dark:bg-[#282e39] text-gray-900 dark:text-white border border-gray-200 dark:border-transparent hover:bg-gray-200 dark:hover:bg-[#343b48]'
+                                ? 'bg-primary text-white shadow-sm'
+                                : 'bg-gray-100 dark:bg-[#282e39] text-gray-900 dark:text-white border border-gray-200 dark:border-transparent hover:bg-gray-200 dark:hover:bg-[#343b48]'
                                 }`}
                         >
                             <p className="text-sm font-medium leading-normal">{filter}</p>

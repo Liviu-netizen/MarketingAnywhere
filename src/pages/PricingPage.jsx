@@ -1,15 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { mockAgencies } from '../data/mockAgencies'
+import MobileContainer from '../components/layout/MobileContainer'
+import { getAgencyById } from '../lib/supabase'
 
 export default function PricingPage() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const [agency, setAgency] = useState(null)
+    const [loading, setLoading] = useState(true)
     const [viewMode, setViewMode] = useState('card')
-    const [selectedAgency, setSelectedAgency] = useState('apex-digital-strategies')
+    const [selectedPlan, setSelectedPlan] = useState('Professional')
 
-    const currentAgency = mockAgencies.find(a => a.id === id) || mockAgencies[0]
-    const compareAgencies = mockAgencies.slice(0, 3)
+    useEffect(() => {
+        async function loadAgency() {
+            const { data } = await getAgencyById(id)
+            if (data) setAgency(data)
+            setLoading(false)
+        }
+        loadAgency()
+    }, [id])
+
+    if (loading) return (
+        <div className="flex justify-center items-center h-screen bg-background-light dark:bg-background-dark">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+    )
 
     const packages = [
         {
