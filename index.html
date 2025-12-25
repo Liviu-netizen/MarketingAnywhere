@@ -1,0 +1,757 @@
+<!-- Apex Digital Strategies - Marketing Prototype -->
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Apex Digital Strategies - Marketing Prototype</title>
+
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <!-- React & Router -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/history@5/umd/history.development.js"></script>
+    <script src="https://unpkg.com/react-router@6.3.0/umd/react-router.development.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6.3.0/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1a2230",
+                        "card-light": "#ffffff",
+                        "card-dark": "#1e2430",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbar hiding */
+        .hide-scrollbar::-webkit-scrollbar,
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar, .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            min-height: 100vh;
+        }
+        /* Material Symbols variation settings for filled icons */
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-white transition-colors duration-200">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Global Destructuring
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+        const { MemoryRouter, Routes, Route, Link, useNavigate, useLocation } = ReactRouterDOM;
+
+        // --- Shared Components ---
+
+        const BottomNav = ({ active }) => {
+            const navigate = useNavigate();
+
+            const getIconStyle = (name) => {
+                return active === name ? "text-primary" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200";
+            };
+
+            return (
+                <nav className="fixed bottom-0 w-full z-30 bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 pb-5 pt-3 px-6">
+                    <div className="flex justify-between items-center max-w-md mx-auto">
+                        <Link to="/" className={`flex flex-col items-center gap-1 ${getIconStyle('home')}`}>
+                            <span className={`material-symbols-outlined text-[24px] ${active === 'home' ? 'filled' : ''}`}>explore</span>
+                            <span className="text-[10px] font-medium">Explore</span>
+                        </Link>
+                        <Link to="/search" className={`flex flex-col items-center gap-1 ${getIconStyle('search')}`}>
+                            <span className={`material-symbols-outlined text-[24px] ${active === 'search' ? 'filled' : ''}`}>search</span>
+                            <span className="text-[10px] font-medium">Search</span>
+                        </Link>
+                        <button className={`flex flex-col items-center gap-1 ${getIconStyle('bookings')}`}>
+                            <div className="relative">
+                                <span className="material-symbols-outlined text-[24px]">calendar_month</span>
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-surface-light dark:border-surface-dark"></span>
+                            </div>
+                            <span className="text-[10px] font-medium">Bookings</span>
+                        </button>
+                        <button className={`flex flex-col items-center gap-1 ${getIconStyle('profile')}`}>
+                            <span className="material-symbols-outlined text-[24px]">person</span>
+                            <span className="text-[10px] font-medium">Profile</span>
+                        </button>
+                    </div>
+                </nav>
+            );
+        };
+
+        // --- Page Components ---
+
+        // Screen 3: Service Discovery (Home)
+        const HomePage = () => {
+            return (
+                <div className="relative min-h-screen w-full max-w-md mx-auto overflow-x-hidden flex flex-col pb-20">
+                    {/* Header & Search */}
+                    <header className="sticky top-0 z-20 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 pb-2">
+                        <div className="px-4 pt-6 pb-2">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Location</p>
+                                    <div className="flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-primary text-[20px]">location_on</span>
+                                        <h1 className="text-lg font-bold">New York, USA</h1>
+                                    </div>
+                                </div>
+                                <button className="w-10 h-10 rounded-full bg-surface-light dark:bg-surface-dark flex items-center justify-center shadow-sm">
+                                    <span className="material-symbols-outlined text-gray-700 dark:text-gray-300">notifications</span>
+                                </button>
+                            </div>
+                            {/* Search Bar */}
+                            <div className="flex items-center gap-3">
+                                <Link to="/search" className="flex flex-col flex-1 h-12">
+                                    <div className="flex w-full flex-1 items-stretch rounded-lg h-full shadow-sm">
+                                        <div className="text-gray-400 flex border-none bg-surface-light dark:bg-[#282e39] items-center justify-center pl-4 rounded-l-lg border-r-0">
+                                            <span className="material-symbols-outlined">search</span>
+                                        </div>
+                                        <input readOnly className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-gray-900 dark:text-white focus:outline-0 focus:ring-0 border-none bg-surface-light dark:bg-[#282e39] focus:border-none h-full placeholder:text-gray-400 px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal" placeholder="Search SEO, Branding..." />
+                                    </div>
+                                </Link>
+                                <button className="flex items-center justify-center h-12 w-12 bg-primary rounded-lg text-white shadow-lg shadow-primary/30">
+                                    <span className="material-symbols-outlined">tune</span>
+                                </button>
+                            </div>
+                        </div>
+                        {/* Chips */}
+                        <div className="flex gap-2 px-4 overflow-x-auto hide-scrollbar pb-2">
+                            <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-primary text-white pl-4 pr-3 transition-transform active:scale-95">
+                                <p className="text-sm font-medium leading-normal">All</p>
+                            </button>
+                            <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-surface-light dark:bg-[#282e39] border border-gray-100 dark:border-gray-700 pl-4 pr-3 transition-transform active:scale-95">
+                                <p className="text-gray-700 dark:text-white text-sm font-medium leading-normal">Budget</p>
+                                <span className="material-symbols-outlined text-gray-500 text-[18px]">keyboard_arrow_down</span>
+                            </button>
+                            <button className="flex h-8 shrink-0 items-center justify-center gap-x-2 rounded-full bg-surface-light dark:bg-[#282e39] border border-gray-100 dark:border-gray-700 pl-4 pr-3 transition-transform active:scale-95">
+                                <p className="text-gray-700 dark:text-white text-sm font-medium leading-normal">Rating</p>
+                                <span className="material-symbols-outlined text-gray-500 text-[18px]">keyboard_arrow_down</span>
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="flex-1 overflow-y-auto w-full">
+                        {/* Featured Agencies */}
+                        <section className="mt-6">
+                            <div className="flex justify-between items-center px-4 mb-3">
+                                <h2 className="text-gray-900 dark:text-white text-xl font-bold leading-tight">Featured Agencies</h2>
+                                <Link to="/search" className="text-primary text-sm font-semibold">See All</Link>
+                            </div>
+                            <div className="flex overflow-x-auto hide-scrollbar px-4 pb-4 gap-4 snap-x snap-mandatory">
+                                {/* Card 1 - Linked to Agency Profile */}
+                                <Link to="/agency" className="flex flex-col gap-3 min-w-[280px] snap-center">
+                                    <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-md">
+                                        <div className="absolute inset-0 bg-cover bg-center transition-transform hover:scale-105 duration-500" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBEleH5jXQVFdc3WMC7IumEM52VUqvPuCMgkC3dvXaeYWDoQ-QL1K6YGuqQIlyM3i_nRL3ec4EgaqZTrgOppg0ERql31X1y_MWbC-iNdCHZaTeYAVrnxfw3CyQ9asorO5xQzcL-SvkncXW9N6L7BmLeZ1teSdrifQaDHxLXQUabk36l4xD2bOnqvPsoHGE3_1KN9kJVeZUBGXa6ojO9bU6K7_wppWN_nPX4b-W1Y3xAUAXlWXRk_r4DBVF-jNZEaMMWDvdVAQDGC2Y")'}}></div>
+                                        <div className="absolute top-3 left-3 bg-white/90 dark:bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-gray-900 dark:text-white">PRO</div>
+                                        <button className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-md text-white">
+                                            <span className="material-symbols-outlined text-[18px]">favorite</span>
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <p className="text-gray-900 dark:text-white text-lg font-bold leading-normal">Apex Digital Strategies</p>
+                                                <p className="text-gray-500 dark:text-gray-400 text-sm">SEO & Content Strategy</p>
+                                            </div>
+                                            <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded">
+                                                <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[14px] filled">star</span>
+                                                <span className="text-green-700 dark:text-green-400 text-xs font-bold">4.9</span>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <span className="text-primary font-semibold">$1,200</span>
+                                            <span className="text-gray-400 text-xs">/ month start</span>
+                                        </div>
+                                    </div>
+                                </Link>
+                                {/* Card 2 */}
+                                <div className="flex flex-col gap-3 min-w-[280px] snap-center">
+                                    <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-md">
+                                        <div className="absolute inset-0 bg-cover bg-center transition-transform hover:scale-105 duration-500" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuA5A8_VOUkhZytm-JkTsovkFu7hKe70Nler68lLL7883HstY8Z6dyDLpbjL6ouEluYCu1RYH6PcL-axGW5F4H41JCxLvaXfZ5Xyms08ZKn-mqqX8cdtOaYvADMO41A1FEt5ffd4FIMrWiDtgSYccl2dkS1UoiwWfCfF1c45FIFv3vdLlIEK9QN3E18GbyByUBDjKTGn7jQU9KYKp1AmPXKW3c336mniALrsb8RGN9iH_-1TBWVczWi6noQ31v0Pdf_eAn4uBpKMwbo")'}}></div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <p className="text-gray-900 dark:text-white text-lg font-bold leading-normal">Global Reach</p>
+                                                <p className="text-gray-500 dark:text-gray-400 text-sm">International PR</p>
+                                            </div>
+                                            <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded">
+                                                <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[14px] filled">star</span>
+                                                <span className="text-green-700 dark:text-green-400 text-xs font-bold">4.7</span>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2 flex items-center gap-2">
+                                            <span className="text-primary font-semibold">$1,200</span>
+                                            <span className="text-gray-400 text-xs">/ month start</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Categories Grid */}
+                        <section className="mt-6">
+                            <h2 className="text-gray-900 dark:text-white text-xl font-bold leading-tight px-4 mb-4">Categories</h2>
+                            <div className="grid grid-cols-4 gap-4 px-4">
+                                {['search', 'campaign', 'palette', 'public'].map((icon, i) => (
+                                    <div key={i} className="flex flex-col items-center gap-2 group cursor-pointer">
+                                        <div className={`w-16 h-16 rounded-2xl ${['bg-blue-100 dark:bg-blue-900/20 text-primary', 'bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400', 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400', 'bg-pink-100 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400'][i]} flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors duration-300`}>
+                                            <span className="material-symbols-outlined text-[28px]">{icon}</span>
+                                        </div>
+                                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{['SEO', 'Ads', 'Design', 'Social'][i]}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
+                        {/* Popular Agencies List */}
+                        <section className="mt-8 px-4 pb-4">
+                            <h2 className="text-gray-900 dark:text-white text-xl font-bold leading-tight mb-4">Top Rated Globally</h2>
+                            <div className="flex flex-col gap-4">
+                                {/* List Item 1 */}
+                                <div className="flex gap-4 p-3 rounded-xl bg-surface-light dark:bg-surface-dark shadow-sm border border-gray-100 dark:border-gray-800">
+                                    <div className="w-20 h-20 rounded-lg bg-cover bg-center shrink-0" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBVhzqvMOt80M9XW4bofnh5HBbFUbHpjsbSrvVq8R5dqIqjgstg8QGvu6G8180SfW9LCZ94V_rqLhAp0rnV24tscmcdnPjauZo3mFGvRyo6bsH2nhe5tbVd8bxhy1lk-FJgX6JYrhXqwyVDuCU2ODH8OnN6YmEqbkZEk_KFgrAmAfk2JUgj3GmOakNjc8cghJQ5GXUdSZSEkKRqyc4FINbUksJYgoBl6gVHBoIbYkn4Qh0TyLB3OJtavPJNiRgCTsbrCD6p-TZsESI")'}}></div>
+                                    <div className="flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <div className="flex justify-between items-start">
+                                                <h3 className="text-base font-bold text-gray-900 dark:text-white">Studio 45</h3>
+                                                <span className="text-primary text-xs font-bold bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">Top 1%</span>
+                                            </div>
+                                            <div className="flex items-center gap-1 mt-1 text-gray-500 text-xs">
+                                                <span className="material-symbols-outlined text-[14px]">public</span>
+                                                <span>London, UK</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-end justify-between mt-2">
+                                            <div className="flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-yellow-500 text-[16px] filled">star</span>
+                                                <span className="text-sm font-semibold text-gray-900 dark:text-white">5.0</span>
+                                            </div>
+                                            <span className="text-sm font-medium text-gray-900 dark:text-white">$75/hr</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </main>
+                    <BottomNav active="home" />
+                </div>
+            );
+        };
+
+        // Screen 2: Marketing Services Search
+        const SearchPage = () => {
+            return (
+                <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white overflow-x-hidden min-h-screen pb-20">
+                    <header className="sticky top-0 z-50 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+                        <div className="px-4 pt-4 pb-2 flex items-center justify-between gap-4">
+                            <Link to="/" className="p-2 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+                                <span className="material-symbols-outlined text-slate-800 dark:text-white">arrow_back</span>
+                            </Link>
+                            <div className="flex-1 relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span className="material-symbols-outlined text-slate-400">search</span>
+                                </div>
+                                <input className="block w-full pl-10 pr-3 py-2.5 bg-white dark:bg-card-dark border-none rounded-xl text-sm focus:ring-2 focus:ring-primary shadow-sm placeholder-slate-400 text-slate-900 dark:text-white" placeholder="Search agencies..." type="text" defaultValue="Marketing Strategy"/>
+                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <button className="p-1 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600">
+                                        <span className="material-symbols-outlined text-slate-500 dark:text-slate-300 text-[18px]">close</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <button className="p-2 -mr-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative">
+                                <span className="material-symbols-outlined text-slate-800 dark:text-white">tune</span>
+                                <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border border-background-light dark:border-background-dark"></span>
+                            </button>
+                        </div>
+                        {/* Chips */}
+                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-4 py-3">
+                            <button className="flex shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 active:scale-95 transition-transform">
+                                <span className="material-symbols-outlined text-primary text-[18px]">location_on</span>
+                                <span className="text-primary text-sm font-medium whitespace-nowrap">New York</span>
+                                <span className="material-symbols-outlined text-primary text-[16px]">close</span>
+                            </button>
+                            <button className="flex shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-white dark:bg-card-dark border border-slate-200 dark:border-slate-700 px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all shadow-sm">
+                                <span className="material-symbols-outlined text-slate-500 dark:text-slate-400 text-[18px]">attach_money</span>
+                                <span className="text-slate-700 dark:text-slate-300 text-sm font-medium whitespace-nowrap">Budget</span>
+                            </button>
+                        </div>
+                    </header>
+
+                    <main className="px-4 py-4 flex flex-col gap-4">
+                        <div className="flex items-center justify-between pb-1">
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">24 Results found</h2>
+                            <div className="flex items-center gap-1 text-primary text-sm font-medium cursor-pointer">
+                                <span>Sort by: Recommended</span>
+                                <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                            </div>
+                        </div>
+
+                        {/* Card 1 - Linked to Profile */}
+                        <Link to="/agency" className="group bg-white dark:bg-card-dark rounded-xl p-4 shadow-sm border border-slate-100 dark:border-transparent hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-start gap-3 mb-3">
+                                <div className="flex gap-3">
+                                    <div className="relative w-14 h-14 shrink-0">
+                                        <img alt="Modern glass office building abstract logo" className="w-full h-full object-cover rounded-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3a8JO1kcLr3PuFYPb1UpDiyrtXa_x7USi6Y9uTEXnY7ggz8QOEjAZDGsACx_S3_8ohZsd9FMot-4eV44K9uuO9CyTM3Qhod0tmMz8FMOiasjO9SMgXx95em_nlTvXEEj9TWgkXBiIeqbYEg31UcBzWpS639kBhx47KcctlWbsl3pDMF9coBbJmgXWPGXtAxFzS2tWYtFIfSe_IC2r2WtTk99OA9DAGE4sbBvLzVlBvbR6ZI-zt7qBDSWcXa1IC9SasnDfO1_UE2E"/>
+                                        <div className="absolute -bottom-1 -right-1 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md border-2 border-white dark:border-card-dark">PRO</div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-base leading-tight mb-1 text-slate-900 dark:text-white">Apex Digital Strategies</h3>
+                                        <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
+                                            <span className="material-symbols-outlined text-[16px] text-amber-400 filled">star</span>
+                                            <span className="font-semibold text-slate-800 dark:text-slate-200">4.9</span>
+                                            <span>(120)</span>
+                                            <span className="mx-1">•</span>
+                                            <span>New York, USA</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button className="shrink-0 text-slate-400 hover:text-red-500 transition-colors">
+                                    <span className="material-symbols-outlined">favorite</span>
+                                </button>
+                            </div>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4 line-clamp-2">
+                                Specializing in high-growth SEO and PPC campaigns for tech startups globally. We turn traffic into revenue.
+                            </p>
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300">SEO</span>
+                                <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300">PPC</span>
+                            </div>
+                            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                                <div className="flex flex-col">
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">Starting from</span>
+                                    <span className="font-bold text-slate-900 dark:text-white">$2k<span className="text-sm font-normal text-slate-500 dark:text-slate-400">/mo</span></span>
+                                </div>
+                                <button className="bg-primary hover:bg-blue-600 text-white text-sm font-semibold py-2 px-6 rounded-lg transition-colors shadow-lg shadow-primary/20">
+                                    Contact Firm
+                                </button>
+                            </div>
+                        </Link>
+
+                        {/* More Cards (Static for now) */}
+                        <div className="group bg-white dark:bg-card-dark rounded-xl p-4 shadow-sm border border-slate-100 dark:border-transparent">
+                            <div className="flex justify-between items-start gap-3 mb-3">
+                                <div className="flex gap-3">
+                                    <div className="w-14 h-14 shrink-0">
+                                        <img className="w-full h-full object-cover rounded-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLTyB-uwFC5zQsrGFXGoLX7xiKRCeaGmXR-XKifPbeq5VSklVZyqPRtKCttmjSHZcfveORIlJXAWfcnYFKFZSUNJWqRzVnGfpCVsj1UfN380ZXvDOF6bICmURZ_hiuEcc5MZ5VpYFeQU9ltBvlkxvmUdUTrwrMss_sGCrqDSS1BhjTUZwbIigEPZNEHjWJdrVWmBh2HlLLPltUKYqKiyKQvOyHIDRG3kVbJaq7vRW2UrTAVpU5gtt9EA9z2VpOJWloBLt7zEYHS_Y"/>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-base leading-tight mb-1 text-slate-900 dark:text-white">Creative Cloud</h3>
+                                        <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
+                                            <span className="material-symbols-outlined text-[16px] text-amber-400 filled">star</span>
+                                            <span className="font-semibold text-slate-800 dark:text-slate-200">4.5</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                                <div className="flex flex-col">
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">Starting from</span>
+                                    <span className="font-bold text-slate-900 dark:text-white">$1.5k<span className="text-sm font-normal text-slate-500 dark:text-slate-400">/mo</span></span>
+                                </div>
+                                <button className="bg-primary/10 hover:bg-primary/20 text-primary dark:text-blue-400 text-sm font-semibold py-2 px-6 rounded-lg transition-colors">
+                                    View Profile
+                                </button>
+                            </div>
+                        </div>
+                    </main>
+                    <BottomNav active="search" />
+                </div>
+            );
+        };
+
+        // Screen 1: Marketing Firm Profile
+        const AgencyProfilePage = () => {
+            const navigate = useNavigate();
+
+            return (
+                <div className="relative flex min-h-screen flex-col overflow-x-hidden pb-24 bg-background-light dark:bg-background-dark">
+                    <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-background-light/85 dark:bg-background-dark/85 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-200">
+                        <button onClick={() => navigate(-1)} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                            <span className="material-symbols-outlined text-slate-900 dark:text-white">arrow_back</span>
+                        </button>
+                        <h2 className="text-sm font-semibold tracking-wide uppercase text-slate-500 dark:text-slate-400">Agency Profile</h2>
+                        <div className="flex gap-2">
+                            <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                                <span className="material-symbols-outlined text-slate-900 dark:text-white">favorite_border</span>
+                            </button>
+                            <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+                                <span className="material-symbols-outlined text-slate-900 dark:text-white">share</span>
+                            </button>
+                        </div>
+                    </header>
+
+                    <section className="flex flex-col items-center pt-8 px-4 w-full">
+                        <div className="relative mb-4">
+                            <div className="bg-center bg-no-repeat bg-cover rounded-full h-32 w-32 shadow-xl ring-4 ring-white dark:ring-slate-800" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDenhD0tzgwGw3eUt3BKdXy7dNbPBeRtWMOpIJIMiqGDS7yOgWI89uZj49MuQGvNwM855q4O6XSLjdgUFNwsB4WwJX05Q3iRzkgVytWsuFKB6oNTcTdkTFwgy_jgECdLsNXtte3NQPX-C8i_8Mc7vA76eHOKVjsno677Nq2zyvdS_UCEVEF-qaFB4ZRa2iAcAgPcOP6MC54ApF6kRk2MpB3LvQ0QypySuBfJ8FTS7TjGhRft8wcB4GnkvPIuvh8Cq-NDJtbLfyCcrM")'}}></div>
+                            <div className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1.5 border-4 border-background-light dark:border-background-dark flex items-center justify-center">
+                                <span className="material-symbols-outlined text-[18px]">verified</span>
+                            </div>
+                        </div>
+                        <h1 className="text-2xl font-bold text-center text-slate-900 dark:text-white mb-1">Apex Digital Strategies</h1>
+                        <div className="flex items-center gap-4 text-slate-500 dark:text-slate-400 text-sm mb-2">
+                            <div className="flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[18px]">location_on</span>
+                                <span>London, UK</span>
+                            </div>
+                            <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full"></div>
+                            <div className="flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[18px] text-yellow-500 filled">star</span>
+                                <span className="font-medium text-slate-900 dark:text-white">4.9</span>
+                                <span>(120 Reviews)</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="flex flex-wrap justify-center gap-2 px-4 mt-6">
+                        <div className="flex items-center gap-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800 px-3 py-1.5">
+                            <span className="material-symbols-outlined text-[16px] text-primary">verified</span>
+                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Verified Agency</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800 px-3 py-1.5">
+                            <span className="material-symbols-outlined text-[16px] text-green-500">attach_money</span>
+                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Budget: $$$</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 rounded-full bg-slate-200/50 dark:bg-slate-800 px-3 py-1.5">
+                            <span className="material-symbols-outlined text-[16px] text-purple-500">computer</span>
+                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Focus: Tech/SaaS</p>
+                        </div>
+                    </section>
+
+                    <section className="grid grid-cols-2 gap-3 px-4 mt-6">
+                        <div className="flex flex-col gap-1 rounded-xl bg-white dark:bg-[#1c2333] p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="material-symbols-outlined text-primary text-xl">trending_up</span>
+                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Avg RoAS</p>
+                            </div>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white">300%</p>
+                        </div>
+                        <div className="flex flex-col gap-1 rounded-xl bg-white dark:bg-[#1c2333] p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="material-symbols-outlined text-primary text-xl">history</span>
+                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Experience</p>
+                            </div>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white">10+ Years</p>
+                        </div>
+                    </section>
+
+                    <section className="px-4 mt-6">
+                        <details className="group rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1c2333] open:ring-1 open:ring-primary/20 shadow-sm transition-all duration-300">
+                            <summary className="flex cursor-pointer items-center justify-between gap-4 p-4 list-none">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center justify-center size-8 rounded-full bg-primary/10 text-primary">
+                                        <span className="material-symbols-outlined text-[20px]">info</span>
+                                    </div>
+                                    <p className="text-sm font-semibold text-slate-900 dark:text-white">About Us</p>
+                                </div>
+                                <span className="material-symbols-outlined text-slate-400 transition-transform group-open:rotate-180">expand_more</span>
+                            </summary>
+                            <div className="px-4 pb-4 pt-0">
+                                <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 pl-[44px]">
+                                    Apex Digital Strategies is a top-tier digital marketing agency specializing in growth for SaaS and Tech companies. We leverage data-driven insights to maximize ROI and have helped over 50 startups reach unicorn status.
+                                </p>
+                            </div>
+                        </details>
+                    </section>
+
+                    <section className="mt-8">
+                        <div className="flex items-center justify-between px-4 mb-3">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Services Offered</h3>
+                            <a className="text-xs font-medium text-primary hover:text-primary/80" href="#">See All</a>
+                        </div>
+                        <div className="flex gap-4 overflow-x-auto px-4 pb-4 no-scrollbar snap-x">
+                            <div className="flex-none w-[160px] snap-center flex flex-col gap-3 rounded-xl bg-white dark:bg-[#1c2333] p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
+                                <div className="size-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-primary">
+                                    <span className="material-symbols-outlined">search</span>
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-sm text-slate-900 dark:text-white">SEO Optimization</h4>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Audit, Strategy & Link Building</p>
+                                </div>
+                                <div className="mt-auto pt-2">
+                                    <span className="text-xs font-medium text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">From $1k/mo</span>
+                                </div>
+                            </div>
+                            {/* More Service Cards... */}
+                        </div>
+                    </section>
+
+                    <section className="mt-4 px-4 mb-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Client Reviews</h3>
+                            <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                                <span className="text-sm font-medium">4.9</span>
+                                <span className="material-symbols-outlined text-[16px] text-yellow-500 filled">star</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex gap-4 p-4 rounded-xl bg-white dark:bg-[#1c2333] border border-slate-100 dark:border-slate-800 shadow-sm">
+                                <div className="shrink-0">
+                                    <div className="h-10 w-10 rounded-full bg-cover bg-center" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCdMLASPlRL0iERaR_F8nKUq693zHbknon3-S7KbuierUrpdIt6IfbZDPLowveD3dm6OSokBFPjINIYsKYi0kXL6o-k54RLrybHILsHsaBzNTj3R3iacS9dsbCeOJHltEVgWjSiiR706Rhv7k5FQ2k-Yoz1WNWN7a57ja5vQwp4LgBLJ0qgdespp5i1BtyR1m2KfcZNvUdc4_-BtRKXBA5ogFwAK5ladEngthmhofzM3M9J-60csvPYFaniZtQhF62tZV8ouJq_JC0")'}}></div>
+                                </div>
+                                <div className="flex flex-col gap-1 w-full">
+                                    <div className="flex justify-between items-start">
+                                        <h5 className="text-sm font-bold text-slate-900 dark:text-white">Sarah Jenkins</h5>
+                                        <span className="text-xs text-slate-400">2d ago</span>
+                                    </div>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-normal">
+                                        They doubled our leads in just 3 months! The team is incredibly responsive and truly understands the SaaS market.
+                                    </p>
+                                </div>
+                            </div>
+                            <Link to="/reviews" className="w-full py-3 text-sm font-medium text-primary hover:text-primary/80 transition-colors text-center block">
+                                View all 120 reviews
+                            </Link>
+                        </div>
+                    </section>
+
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 flex gap-3 z-50 safe-area-bottom">
+                        <Link to="/pricing" className="flex-1 flex items-center justify-center h-12 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white font-semibold text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-95 transform duration-100">
+                            View Pricing
+                        </Link>
+                        <button className="flex-[2] h-12 rounded-xl bg-primary text-white font-bold text-sm shadow-lg shadow-primary/30 hover:bg-blue-600 transition-colors flex items-center justify-center gap-2 active:scale-95 transform duration-100">
+                            <span className="material-symbols-outlined text-[20px]">chat_bubble</span>
+                            Contact Firm
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // Screen 4: Reviews
+        const ReviewsPage = () => {
+            const navigate = useNavigate();
+            return (
+                <div className="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto bg-white dark:bg-[#111318] shadow-2xl">
+                    <div className="sticky top-0 z-50 flex items-center bg-white/90 dark:bg-[#111318]/90 backdrop-blur-md p-4 pb-2 justify-between border-b border-gray-200 dark:border-gray-800">
+                        <div onClick={() => navigate(-1)} className="cursor-pointer text-gray-900 dark:text-white flex size-12 shrink-0 items-center justify-start hover:opacity-70 transition-opacity">
+                            <span className="material-symbols-outlined" style={{fontSize: '24px'}}>arrow_back_ios</span>
+                        </div>
+                        <h2 className="text-gray-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12">Reviews</h2>
+                    </div>
+                    <main className="flex-1 pb-24">
+                        <div className="flex flex-col p-5 bg-white dark:bg-[#111318]">
+                            <div className="flex flex-wrap gap-x-6 gap-y-4">
+                                <div className="flex flex-col gap-1 items-center justify-center min-w-[100px]">
+                                    <p className="text-gray-900 dark:text-white text-5xl font-black leading-tight tracking-[-0.033em]">4.8</p>
+                                    <div className="flex gap-0.5 text-yellow-400">
+                                        {[1,2,3,4,5].map(i => <span key={i} className="material-symbols-outlined filled" style={{fontSize: '18px'}}>star</span>)}
+                                    </div>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">124 reviews</p>
+                                </div>
+                                <div className="grid flex-1 grid-cols-[12px_1fr_30px] items-center gap-y-2 gap-x-3">
+                                    {/* Simplified Progress bars */}
+                                    <p className="text-gray-600 dark:text-gray-300 text-xs font-semibold leading-normal">5</p>
+                                    <div className="flex h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-[#3b4354]"><div className="rounded-full bg-primary" style={{width: '70%'}}></div></div>
+                                    <p className="text-gray-400 dark:text-[#9da6b9] text-xs font-normal leading-normal text-right">70%</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="h-px w-full bg-gray-200 dark:bg-gray-800 my-2"></div>
+                        <div className="flex flex-col gap-6 p-4">
+                            {/* Review 1 */}
+                            <div className="flex flex-col gap-3 bg-white dark:bg-[#111318] rounded-xl">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 ring-2 ring-gray-100 dark:ring-gray-800" style={{backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDrFQKvKU9MABXj4imKk_2Fh-cxj7rhQCjsKLh59tIPB3HNQ516vA8gzu7cAL_l4saAJaXdX8ZjSqOzACjHUL9DWRmwaLm8wSOrYWO_fiyHZlS4I0B_M_jKVn6EzDj846hMFXaauLfcQAmTIm5UGxULTW-E63--EpqguNknH9i73oIuMzy3lOem1ZfRrEawNuqB2K7-FTjBpxRapNs2wbOemfoXU-Xiyr2_A2yNuo8b2WkoBmIUPuCw0SzOtyZAKJu_jFKG7geT05I")'}}></div>
+                                        <div className="flex flex-col">
+                                            <p className="text-gray-900 dark:text-white text-base font-semibold leading-tight">Jane Doe</p>
+                                            <p className="text-gray-500 dark:text-[#9da6b9] text-xs font-normal">2 days ago</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-1 text-yellow-400 mt-1">
+                                    {[1,2,3,4,5].map(i => <span key={i} className="material-symbols-outlined filled" style={{fontSize: '18px'}}>star</span>)}
+                                </div>
+                                <p className="text-gray-700 dark:text-gray-200 text-sm font-normal leading-relaxed">
+                                    Incredible ROI on our PPC campaign. The team was responsive and provided detailed weekly reports.
+                                </p>
+                            </div>
+                        </div>
+                    </main>
+                    <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-gradient-to-t from-white via-white to-transparent dark:from-[#111318] dark:via-[#111318] dark:to-transparent z-40 pb-6 pt-12">
+                        <button className="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 bg-primary hover:bg-primary/90 text-white text-base font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/30 transition-all active:scale-[0.98]">
+                            <span className="material-symbols-outlined mr-2" style={{fontSize: '20px'}}>edit</span>
+                            <span className="truncate">Write a Review</span>
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // Screen 5: Price Comparison
+        const PricingPage = () => {
+            const navigate = useNavigate();
+            const [viewMode, setViewMode] = useState('card'); // 'card' or 'table'
+
+            return (
+                <div className="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark">
+                    <div className="sticky top-0 z-50 flex items-center bg-surface-light dark:bg-background-dark p-4 pb-2 justify-between border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-200">
+                        <div onClick={() => navigate(-1)} className="text-slate-900 dark:text-white flex size-12 shrink-0 items-center justify-start cursor-pointer hover:opacity-70">
+                            <span className="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
+                        </div>
+                        <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Compare Packages</h2>
+                        <div className="flex w-12 items-center justify-end"></div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col pb-24">
+                        {/* Segmented Buttons */}
+                        <div className="flex px-4 py-4 sticky top-[68px] z-40 bg-background-light dark:bg-background-dark transition-colors duration-200">
+                            <div className="flex h-10 flex-1 items-center justify-center rounded-lg bg-slate-200 dark:bg-[#282e39] p-1">
+                                <label className={`group flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-[4px] px-2 transition-all duration-200 ${viewMode === 'card' ? 'bg-white dark:bg-background-dark shadow-sm' : ''}`} onClick={() => setViewMode('card')}>
+                                    <span className={`truncate text-sm font-semibold leading-normal ${viewMode === 'card' ? 'text-primary' : 'text-slate-500 dark:text-[#9da6b9]'}`}>Card View</span>
+                                </label>
+                                <label className={`group flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-[4px] px-2 transition-all duration-200 ${viewMode === 'table' ? 'bg-white dark:bg-background-dark shadow-sm' : ''}`} onClick={() => setViewMode('table')}>
+                                    <span className={`truncate text-sm font-semibold leading-normal ${viewMode === 'table' ? 'text-primary' : 'text-slate-500 dark:text-[#9da6b9]'}`}>Table View</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {viewMode === 'card' && (
+                            <div className="w-full overflow-x-auto hide-scrollbar snap-x snap-mandatory px-4 py-4 flex gap-4">
+                                <div className="snap-center shrink-0 w-[85%] max-w-[320px] flex flex-col gap-4 rounded-xl border border-slate-200 dark:border-[#3b4354] bg-surface-light dark:bg-surface-dark p-5 shadow-sm transition-colors duration-200">
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="size-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-primary font-bold text-lg">A</div>
+                                                <div>
+                                                    <h1 className="text-slate-900 dark:text-white text-base font-bold leading-tight">Apex Digital</h1>
+                                                    <div className="flex items-center gap-1 text-amber-400 text-xs mt-0.5">
+                                                        <span className="material-symbols-outlined text-[16px] filled">star</span>
+                                                        <span className="font-semibold text-slate-700 dark:text-slate-300">4.9</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span className="text-white text-[10px] font-bold uppercase tracking-wider rounded bg-primary px-2 py-1">Best Value</span>
+                                        </div>
+                                        <div className="h-px bg-slate-100 dark:bg-slate-700 w-full my-1"></div>
+                                        <p className="flex items-baseline gap-1 text-slate-900 dark:text-white">
+                                            <span className="text-4xl font-black leading-tight tracking-tight">$1,200</span>
+                                            <span className="text-slate-500 dark:text-slate-400 text-sm font-bold">/mo</span>
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col gap-3 my-2">
+                                        <div className="text-[13px] font-medium leading-normal flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                                            <span className="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
+                                            SEO Audit & Optimization
+                                        </div>
+                                        <div className="text-[13px] font-medium leading-normal flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                                            <span className="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
+                                            Content Creation (4/mo)
+                                        </div>
+                                        <div className="text-[13px] font-medium leading-normal flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                                            <span className="material-symbols-outlined text-green-500 text-[20px]">check_circle</span>
+                                            PPC Management
+                                        </div>
+                                    </div>
+                                    <button className="mt-auto flex w-full cursor-pointer items-center justify-center rounded-lg h-11 px-4 bg-primary text-white text-sm font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/20">Book Package</button>
+                                </div>
+                                <div className="snap-center shrink-0 w-[85%] max-w-[320px] flex flex-col gap-4 rounded-xl border border-slate-200 dark:border-[#3b4354] bg-surface-light dark:bg-surface-dark p-5 shadow-sm transition-colors duration-200">
+                                     <div className="flex flex-col gap-3">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="size-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 font-bold text-lg">G</div>
+                                                <div>
+                                                    <h1 className="text-slate-900 dark:text-white text-base font-bold leading-tight">Growth Gurus</h1>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="h-px bg-slate-100 dark:bg-slate-700 w-full my-1"></div>
+                                        <p className="flex items-baseline gap-1 text-slate-900 dark:text-white">
+                                            <span className="text-4xl font-black leading-tight tracking-tight">$1,500</span>
+                                            <span className="text-slate-500 dark:text-slate-400 text-sm font-bold">/mo</span>
+                                        </p>
+                                    </div>
+                                     <button className="mt-auto flex w-full cursor-pointer items-center justify-center rounded-lg h-11 px-4 bg-slate-200 dark:bg-[#282e39] text-slate-900 dark:text-white text-sm font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">Book Package</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {viewMode === 'table' && (
+                            <div className="w-full overflow-x-auto border-t border-slate-200 dark:border-[#3b4354] mt-4">
+                                <div className="min-w-[600px] w-full">
+                                    <div className="grid grid-cols-[140px_1fr_1fr_1fr] bg-slate-50 dark:bg-[#15181e]">
+                                        <div className="p-3 text-xs font-bold text-slate-500 dark:text-[#9da6b9] uppercase sticky left-0 bg-slate-50 dark:bg-[#15181e] z-10">Feature</div>
+                                        <div className="p-3 text-xs font-bold text-center text-slate-900 dark:text-white truncate">Apex Digital</div>
+                                        <div className="p-3 text-xs font-bold text-center text-slate-900 dark:text-white truncate">Growth Gurus</div>
+                                        <div className="p-3 text-xs font-bold text-center text-slate-900 dark:text-white truncate">NexGen Media</div>
+                                    </div>
+                                    <div className="divide-y divide-slate-100 dark:divide-[#2a2f3a] text-sm text-slate-700 dark:text-slate-300">
+                                        <div className="grid grid-cols-[140px_1fr_1fr_1fr] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                            <div className="p-3 font-medium flex items-center sticky left-0 bg-background-light dark:bg-background-dark z-10">Content Posts</div>
+                                            <div className="p-3 text-center flex items-center justify-center font-semibold">4 / mo</div>
+                                            <div className="p-3 text-center flex items-center justify-center font-semibold">8 / mo</div>
+                                            <div className="p-3 text-center flex items-center justify-center text-slate-400 dark:text-slate-600">-</div>
+                                        </div>
+                                         <div className="grid grid-cols-[140px_1fr_1fr_1fr] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                            <div className="p-3 font-medium flex items-center sticky left-0 bg-background-light dark:bg-background-dark z-10">SEO Audit</div>
+                                            <div className="p-3 text-center flex items-center justify-center"><span className="material-symbols-outlined text-primary text-[20px]">check</span></div>
+                                            <div className="p-3 text-center flex items-center justify-center"><span className="material-symbols-outlined text-primary text-[20px]">check</span></div>
+                                            <div className="p-3 text-center flex items-center justify-center"><span className="material-symbols-outlined text-primary text-[20px]">check</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            return (
+                <MemoryRouter>
+                    <Routes>
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/search" element={<SearchPage />} />
+                        <Route path="/agency" element={<AgencyProfilePage />} />
+                        <Route path="/reviews" element={<ReviewsPage />} />
+                        <Route path="/pricing" element={<PricingPage />} />
+                    </Routes>
+                </MemoryRouter>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
