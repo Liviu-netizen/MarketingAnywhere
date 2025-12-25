@@ -75,6 +75,7 @@ export default function HomePage() {
 
             {/* Main Content */}
             <main className="flex-1 overflow-y-auto w-full">
+                <section>
                     <h2 className="text-gray-900 dark:text-white text-xl font-bold leading-tight px-4 mb-4">Categories</h2>
                     <div className="grid grid-cols-4 gap-4 px-4">
                         {categories.map((cat) => (
