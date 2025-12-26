@@ -20,6 +20,7 @@ export default function HomePage() {
 
     const featuredAgencies = agencies.filter(a => a.is_pro || a.verified).slice(0, 4)
     const topRated = agencies.filter(a => a.rating >= 4.8).slice(0, 3)
+    const topRatedList = topRated.length > 0 ? topRated : agencies.slice(0, 3)
 
     return (
         <MobileContainer>
@@ -97,7 +98,7 @@ export default function HomePage() {
                 <section className="mt-8 px-4 pb-4">
                     <h2 className="text-gray-900 dark:text-white text-xl font-bold leading-tight mb-4">Top Rated Globally</h2>
                     <div className="flex flex-col gap-4">
-                        {topRated.map((agency) => (
+                        {topRatedList.map((agency) => (
                             <Link
                                 key={agency.id}
                                 to={`/agency/${agency.id}`}
@@ -117,18 +118,18 @@ export default function HomePage() {
                                         </div>
                                         <div className="flex items-center gap-1 mt-1 text-gray-500 text-xs">
                                             <span className="material-symbols-outlined text-[14px]">public</span>
-                                            <span>{agency.location.city}, {agency.location.country}</span>
+                                            <span>{agency.location?.city || 'Worldwide'}{agency.location?.country ? `, ${agency.location.country}` : ''}</span>
                                             <span className="mx-1">•</span>
-                                            <span className="text-primary font-medium">{agency.tags[0]}</span>
+                                            <span className="text-primary font-medium">{agency.tags?.[0] || 'Marketing'}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-end justify-between mt-2">
                                         <div className="flex items-center gap-1">
                                             <span className="material-symbols-outlined text-yellow-500 text-[16px] filled">star</span>
-                                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{agency.rating}</span>
-                                            <span className="text-xs text-gray-400">({agency.review_count})</span>
+                                            <span className="text-sm font-semibold text-gray-900 dark:text-white">{agency.rating || 'New'}</span>
+                                            <span className="text-xs text-gray-400">({agency.review_count || 0})</span>
                                         </div>
-                                        <span className="text-sm font-medium text-gray-900 dark:text-white">${agency.pricing.hourly_rate}/hr</span>
+                                        <span className="text-sm font-medium text-gray-900 dark:text-white">{agency.pricing?.hourly_rate ? `$${agency.pricing.hourly_rate}/hr` : 'Quote'}</span>
                                     </div>
                                 </div>
                             </Link>

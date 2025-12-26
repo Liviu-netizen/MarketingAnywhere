@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getAgencyById, getMessages, sendMessage as sendSupabaseMessage, subscribeToMessages } from '../lib/supabase'
+import { getAgencyById, getMessages, getOrCreateConversation, sendMessage as sendSupabaseMessage, subscribeToMessages } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
 export default function ChatPage() {
@@ -14,20 +14,51 @@ export default function ChatPage() {
     const [conversationId, setConversationId] = useState(null)
     const [loading, setLoading] = useState(true)
 
+    const formatMessage = (messageData) => ({
+        id: messageData.id,
+        senderId: messageData.sender_id,
+        text: messageData.content,
+        time: new Date(messageData.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    })
+
     useEffect(() => {
+        let subscription
+
         async function loadChat() {
             if (!agencyId) return
+            setLoading(true)
 
             const { data: agencyData } = await getAgencyById(agencyId)
             setAgency(agencyData)
 
-            // In a real app, we'd first find/create a conversation ID
-            // For now, let's assume we have one or just fetch messages for this agency/user pair
-            // We'll simulate fetching messages from a 'messages' table linked to a conversation
+            if (agencyData?.is_registered && user) {
+                const { data: conversation } = await getOrCreateConversation(user.id, agencyId)
+                if (conversation) {
+                    setConversationId(conversation.id)
+                    const { data: messagesData } = await getMessages(conversation.id)
+                    if (messagesData) {
+                        setMessages(messagesData.map(formatMessage))
+                    }
+                    subscription = subscribeToMessages(conversation.id, (payload) => {
+                        if (payload?.new) {
+                            setMessages((prev) => {
+                                if (prev.some((msg) => msg.id === payload.new.id)) return prev
+                                return [...prev, formatMessage(payload.new)]
+                            })
+                        }
+                    })
+                }
+            }
+
             setLoading(false)
         }
+
         loadChat()
-    }, [agencyId])
+
+        return () => {
+            if (subscription) subscription.unsubscribe()
+        }
+    }, [agencyId, user])
 
     // Check if agency is registered for in-app chat
     const isRegistered = agency?.is_registered
@@ -41,17 +72,15 @@ export default function ChatPage() {
     }, [messages])
 
     const handleSendMessage = async () => {
-        if (!message.trim() || !user || !agencyId) return
+        if (!message.trim() || !user || !agencyId || !conversationId) return
 
-        const { data, error } = await sendSupabaseMessage(conversationId, message, user.id)
+        const { data } = await sendSupabaseMessage(conversationId, message.trim(), user.id)
 
         if (data) {
-            setMessages(prev => [...prev, {
-                id: data.id,
-                sender: 'user',
-                text: data.content,
-                time: new Date(data.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            }])
+            setMessages((prev) => {
+                if (prev.some((msg) => msg.id === data.id)) return prev
+                return [...prev, formatMessage(data)]
+            })
             setMessage('')
         }
     }
@@ -77,6 +106,22 @@ export default function ChatPage() {
                         <span className="material-symbols-outlined text-[20px]">open_in_new</span>
                         Visit Website
                     </a>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="block w-full mt-4 text-primary font-medium"
+                    >
+                        Go Back
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    if (!loading && !agency) {
+        return (
+            <div className="relative flex min-h-screen flex-col items-center justify-center bg-background-light dark:bg-background-dark p-4">
+                <div className="text-center max-w-sm">
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Agency not found</h1>
                     <button
                         onClick={() => navigate(-1)}
                         className="block w-full mt-4 text-primary font-medium"
@@ -123,16 +168,16 @@ export default function ChatPage() {
                 {messages.map((msg) => (
                     <div
                         key={msg.id}
-                        className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${msg.senderId === user?.id ? 'justify-end' : 'justify-start'}`}
                     >
                         <div
-                            className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.sender === 'user'
+                            className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.senderId === user?.id
                                 ? 'bg-primary text-white rounded-br-sm'
                                 : 'bg-white dark:bg-surface-dark text-slate-900 dark:text-white rounded-bl-sm shadow-sm border border-slate-100 dark:border-slate-700'
                                 }`}
                         >
                             <p className="text-sm leading-relaxed">{msg.text}</p>
-                            <p className={`text-[10px] mt-1 ${msg.sender === 'user' ? 'text-white/70' : 'text-slate-400'}`}>
+                            <p className={`text-[10px] mt-1 ${msg.senderId === user?.id ? 'text-white/70' : 'text-slate-400'}`}>
                                 {msg.time}
                             </p>
                         </div>

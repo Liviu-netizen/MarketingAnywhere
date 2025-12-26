@@ -3,13 +3,57 @@ import { useParams, useNavigate } from 'react-router-dom'
 import MobileContainer from '../components/layout/MobileContainer'
 import { getAgencyById } from '../lib/supabase'
 
+const packages = [
+    {
+        id: 'apex-digital-strategies',
+        name: 'Apex Digital',
+        rating: 4.9,
+        reviews: 124,
+        price: 1200,
+        color: 'blue',
+        badge: 'Best Value',
+        badgeColor: 'primary',
+        features: ['SEO Audit & Optimization', 'Content Creation (4/mo)', 'PPC Management']
+    },
+    {
+        id: 'growth-gurus',
+        name: 'Growth Gurus',
+        rating: 4.7,
+        reviews: 89,
+        price: 1500,
+        color: 'purple',
+        badge: 'Top Rated',
+        badgeColor: 'purple-600',
+        features: ['Advanced SEO Strategy', 'Social Media Strategy', 'Influencer Outreach']
+    },
+    {
+        id: 'nexgen-media',
+        name: 'NexGen Media',
+        rating: 4.5,
+        reviews: 42,
+        price: 900,
+        color: 'orange',
+        badge: null,
+        features: ['Basic SEO Audit', 'Email Marketing', 'Basic Analytics']
+    }
+]
+
+const comparisonFeatures = [
+    { name: 'Content Posts', values: ['4 / mo', '8 / mo', '-'] },
+    { name: 'SEO Audit', values: [true, true, true] },
+    { name: 'Analytics', values: ['Advanced', 'Advanced', 'Basic'] },
+    { name: 'PPC Mgmt', values: [true, true, false] },
+    { name: 'Email Marketing', values: ['Add-on', 'Add-on', true] },
+    { name: 'Support', values: ['24/7 Chat', 'Dedicated Mgr', 'Email Only'] }
+]
+
 export default function PricingPage() {
     const { id } = useParams()
     const navigate = useNavigate()
     const [agency, setAgency] = useState(null)
     const [loading, setLoading] = useState(true)
     const [viewMode, setViewMode] = useState('card')
-    const [selectedPlan, setSelectedPlan] = useState('Professional')
+    const [selectedPackageId, setSelectedPackageId] = useState(packages[0]?.id || '')
 
     useEffect(() => {
         async function loadAgency() {
@@ -26,51 +70,15 @@ export default function PricingPage() {
         </div>
     )
 
-    const packages = [
-        {
-            id: 'apex-digital-strategies',
-            name: 'Apex Digital',
-            rating: 4.9,
-            reviews: 124,
-            price: 1200,
-            color: 'blue',
-            badge: 'Best Value',
-            badgeColor: 'primary',
-            features: ['SEO Audit & Optimization', 'Content Creation (4/mo)', 'PPC Management']
-        },
-        {
-            id: 'growth-gurus',
-            name: 'Growth Gurus',
-            rating: 4.7,
-            reviews: 89,
-            price: 1500,
-            color: 'purple',
-            badge: 'Top Rated',
-            badgeColor: 'purple-600',
-            features: ['Advanced SEO Strategy', 'Social Media Strategy', 'Influencer Outreach']
-        },
-        {
-            id: 'nexgen-media',
-            name: 'NexGen Media',
-            rating: 4.5,
-            reviews: 42,
-            price: 900,
-            color: 'orange',
-            badge: null,
-            features: ['Basic SEO Audit', 'Email Marketing', 'Basic Analytics']
-        }
-    ]
+    if (!agency) return (
+        <div className="flex flex-col items-center justify-center h-screen bg-background-light dark:bg-background-dark">
+            <p className="text-gray-500 font-bold mb-4">Agency not found</p>
+            <button onClick={() => navigate(-1)} className="text-primary font-bold">Go Back</button>
+        </div>
+    )
 
-    const comparisonFeatures = [
-        { name: 'Content Posts', values: ['4 / mo', '8 / mo', '-'] },
-        { name: 'SEO Audit', values: [true, true, true] },
-        { name: 'Analytics', values: ['Advanced', 'Advanced', 'Basic'] },
-        { name: 'PPC Mgmt', values: [true, true, false] },
-        { name: 'Email Marketing', values: ['Add-on', 'Add-on', true] },
-        { name: 'Support', values: ['24/7 Chat', 'Dedicated Mgr', 'Email Only'] }
-    ]
-
-    const selected = packages.find(p => p.id === selectedAgency) || packages[0]
+    const currentAgency = agency || { location: { city: 'Worldwide' }, tags: [] }
+    const selected = packages.find(p => p.id === selectedPackageId) || packages[0]
 
     return (
         <div className="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden bg-background-light dark:bg-background-dark">
@@ -111,7 +119,7 @@ export default function PricingPage() {
                 {/* Headline */}
                 <div className="px-4 pb-2 pt-2 flex justify-between items-end">
                     <h3 className="text-slate-900 dark:text-white tracking-tight text-2xl font-bold leading-tight text-left">{packages.length} Packages</h3>
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{currentAgency.location.city} • {currentAgency.tags[0]}</span>
+                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{currentAgency.location?.city || 'Worldwide'} • {currentAgency.tags?.[0] || 'Marketing'}</span>
                 </div>
 
                 {/* Card View */}
@@ -120,8 +128,8 @@ export default function PricingPage() {
                         {packages.map((pkg) => (
                             <div
                                 key={pkg.id}
-                                onClick={() => setSelectedAgency(pkg.id)}
-                                className={`snap-center shrink-0 w-[85%] max-w-[320px] flex flex-col gap-4 rounded-xl border ${selectedAgency === pkg.id ? 'border-primary ring-2 ring-primary/20' : 'border-slate-200 dark:border-[#3b4354]'} bg-surface-light dark:bg-surface-dark p-5 shadow-sm transition-all duration-200 cursor-pointer`}
+                                onClick={() => setSelectedPackageId(pkg.id)}
+                                className={`snap-center shrink-0 w-[85%] max-w-[320px] flex flex-col gap-4 rounded-xl border ${selectedPackageId === pkg.id ? 'border-primary ring-2 ring-primary/20' : 'border-slate-200 dark:border-[#3b4354]'} bg-surface-light dark:bg-surface-dark p-5 shadow-sm transition-all duration-200 cursor-pointer`}
                             >
                                 <div className="flex flex-col gap-3">
                                     <div className="flex items-start justify-between">
@@ -158,7 +166,7 @@ export default function PricingPage() {
                                         </div>
                                     ))}
                                 </div>
-                                <button className={`mt-auto flex w-full cursor-pointer items-center justify-center rounded-lg h-11 px-4 text-sm font-bold transition-colors ${selectedAgency === pkg.id ? 'bg-primary text-white shadow-lg shadow-blue-900/20 hover:bg-blue-700' : 'bg-slate-200 dark:bg-[#282e39] text-slate-900 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-700'}`}>
+                                <button className={`mt-auto flex w-full cursor-pointer items-center justify-center rounded-lg h-11 px-4 text-sm font-bold transition-colors ${selectedPackageId === pkg.id ? 'bg-primary text-white shadow-lg shadow-blue-900/20 hover:bg-blue-700' : 'bg-slate-200 dark:bg-[#282e39] text-slate-900 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-700'}`}>
                                     Book Package
                                 </button>
                             </div>

@@ -1,62 +1,61 @@
-// Google Places API wrapper for marketing agency discovery
-// Note: In production, API calls should go through your backend to protect API keys
+// Places API wrapper for live agency discovery (OpenStreetMap via /api/places)
+const PLACES_API_BASE = import.meta.env.VITE_PLACES_API_URL || ''
 
-const GOOGLE_PLACES_API_KEY = import.meta.env.VITE_GOOGLE_PLACES_API_KEY || ''
+const buildPlacesUrl = (path) => {
+    if (!PLACES_API_BASE) return path
+    return `${PLACES_API_BASE.replace(/\/$/, '')}${path}`
+}
 
-// For development, we'll use mock data. In production, these would call the actual API.
-const USE_MOCK_DATA = !GOOGLE_PLACES_API_KEY
+const fetchPlaces = async (path, payload = {}) => {
+    const response = await fetch(buildPlacesUrl(path), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+        const message = await response.text()
+        const error = new Error(`Places API error: ${response.status}`)
+        error.details = message
+        throw error
+    }
+
+    return response.json()
+}
 
 // Search for marketing agencies near a location
 export const searchMarketingAgencies = async (location, options = {}) => {
-    if (USE_MOCK_DATA) {
-        // Return mock data for development
-        const { mockAgencies } = await import('../data/mockAgencies')
-        return { data: mockAgencies, error: null }
-    }
-
     try {
-        // In production, this should call your backend which then calls Google Places API
-        const response = await fetch(`/api/places/search`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                query: 'marketing agency',
-                location,
-                radius: options.radius || 50000, // 50km default
-                type: 'marketing_agency'
-            })
+        const { data } = await fetchPlaces('/api/places/search', {
+            location,
+            query: options.query,
+            category: options.category,
+            radius: options.radius,
+            limit: options.limit,
+            lat: options.lat,
+            lng: options.lng
         })
-
-        const data = await response.json()
-        return { data: data.results, error: null }
+        return { data, error: null }
     } catch (error) {
-        console.error('Google Places API error:', error)
+        console.error('Places API error:', error)
         return { data: null, error }
     }
 }
 
-// Get place details including reviews
+// Get place details
 export const getPlaceDetails = async (placeId) => {
-    if (USE_MOCK_DATA) {
-        const { mockAgencies } = await import('../data/mockAgencies')
-        const agency = mockAgencies.find(a => a.id === placeId || a.google_place_id === placeId)
-        return { data: agency, error: null }
-    }
-
     try {
-        const response = await fetch(`/api/places/details/${placeId}`)
-        const data = await response.json()
-        return { data: data.result, error: null }
+        const { data } = await fetchPlaces('/api/places/details', { id: placeId })
+        return { data, error: null }
     } catch (error) {
-        console.error('Google Places API error:', error)
+        console.error('Places API error:', error)
         return { data: null, error }
     }
 }
 
-// Get photo URL from Google Places photo reference
-export const getPlacePhotoUrl = (photoReference, maxWidth = 400) => {
-    if (!photoReference || USE_MOCK_DATA) return null
-    return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${GOOGLE_PLACES_API_KEY}`
+// OSM does not provide direct photo URLs. Use supplied image URLs when available.
+export const getPlacePhotoUrl = (photoReference) => {
+    return photoReference || null
 }
 
 // Calculate distance between two coordinates
@@ -80,22 +79,14 @@ export const formatDistance = (km) => {
     return `${km.toFixed(1)}km`
 }
 
-// Geocode an address to coordinates
+// Basic fallback geocoder (prefer server-side geocoding via /api/places)
 export const geocodeAddress = async (address) => {
-    if (USE_MOCK_DATA) {
-        // Return mock NYC coordinates
-        return {
-            data: { lat: 40.7128, lng: -74.0060, formatted_address: 'New York, NY, USA' },
-            error: null
-        }
+    if (!address) {
+        return { data: null, error: new Error('Address is required') }
     }
 
-    try {
-        const response = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`)
-        const data = await response.json()
-        return { data: data.results[0], error: null }
-    } catch (error) {
-        console.error('Geocoding error:', error)
-        return { data: null, error }
+    return {
+        data: { lat: 40.7128, lng: -74.0060, formatted_address: address },
+        error: null
     }
 }

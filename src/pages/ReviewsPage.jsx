@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import MobileContainer from '../components/layout/MobileContainer'
 import { getAgencyById, getAgencyReviews } from '../lib/supabase'
 
 export default function ReviewsPage() {
@@ -35,6 +34,23 @@ export default function ReviewsPage() {
 
     const filters = ['All', '5 Stars', 'Latest', 'With Photos']
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-white dark:bg-[#111318]">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+            </div>
+        )
+    }
+
+    if (!agency) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-[#111318]">
+                <p className="text-gray-500 font-bold mb-4">Agency not found</p>
+                <button onClick={() => navigate(-1)} className="text-primary font-bold">Go Back</button>
+            </div>
+        )
+    }
+
     return (
         <div className="relative flex h-full min-h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto bg-white dark:bg-[#111318] shadow-2xl">
             {/* Header */}
@@ -58,7 +74,7 @@ export default function ReviewsPage() {
                 <div className="flex flex-col p-5 bg-white dark:bg-[#111318]">
                     <div className="flex flex-wrap gap-x-6 gap-y-4">
                         <div className="flex flex-col gap-1 items-center justify-center min-w-[100px]">
-                            <p className="text-gray-900 dark:text-white text-5xl font-black leading-tight tracking-[-0.033em]">{agency.rating}</p>
+                            <p className="text-gray-900 dark:text-white text-5xl font-black leading-tight tracking-[-0.033em]">{agency.rating || 0}</p>
                             <div className="flex gap-0.5 text-yellow-400">
                                 {[1, 2, 3, 4, 5].map(i => (
                                     <span key={i} className={`material-symbols-outlined ${i <= Math.floor(agency.rating) ? 'filled' : ''}`} style={{ fontSize: '18px' }}>
@@ -66,17 +82,17 @@ export default function ReviewsPage() {
                                     </span>
                                 ))}
                             </div>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">{agency.review_count} reviews</p>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium leading-normal">{agency.review_count || 0} reviews</p>
                         </div>
                         <div className="grid flex-1 grid-cols-[12px_1fr_30px] items-center gap-y-2 gap-x-3">
                             {[5, 4, 3, 2, 1].map(rating => (
-                                <React.Fragment key={rating}>
+                                <Fragment key={rating}>
                                     <p className="text-gray-600 dark:text-gray-300 text-xs font-semibold leading-normal">{rating}</p>
                                     <div className="flex h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-[#3b4354]">
                                         <div className="rounded-full bg-primary" style={{ width: `${ratingDistribution[rating]}%` }} />
                                     </div>
                                     <p className="text-gray-400 dark:text-[#9da6b9] text-xs font-normal leading-normal text-right">{ratingDistribution[rating]}%</p>
-                                </React.Fragment>
+                                </Fragment>
                             ))}
                         </div>
                     </div>

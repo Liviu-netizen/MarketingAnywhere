@@ -73,7 +73,7 @@ export default function AgencyProfilePage() {
                 <div className="flex items-center gap-4 text-slate-500 dark:text-slate-400 text-sm mb-2">
                     <div className="flex items-center gap-1">
                         <span className="material-symbols-outlined text-[18px]">location_on</span>
-                        <span>{agency.location.city}, {agency.location.country}</span>
+                        <span>{agency.location?.city || 'Worldwide'}{agency.location?.country ? `, ${agency.location.country}` : ''}</span>
                     </div>
                     <div className="w-1 h-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
                     <div className="flex items-center gap-1">

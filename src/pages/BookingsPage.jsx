@@ -10,6 +10,16 @@ export default function BookingsPage() {
     const [bookings, setBookings] = useState([])
     const [loading, setLoading] = useState(true)
 
+    const formatDate = (scheduledAt, options) => {
+        if (!scheduledAt) return 'TBD'
+        return new Date(scheduledAt).toLocaleDateString('en-US', options)
+    }
+
+    const formatTime = (scheduledAt) => {
+        if (!scheduledAt) return ''
+        return new Date(scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+
     useEffect(() => {
         async function loadBookings() {
             if (!user) {
@@ -63,14 +73,14 @@ export default function BookingsPage() {
                                     className="flex items-center gap-4 p-4 bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-slate-100 dark:border-slate-800"
                                 >
                                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/30 to-purple-500/30 flex items-center justify-center text-primary font-bold">
-                                        {booking.agency.name[0]}
+                                        {booking.agencies?.name?.[0] || '?'}
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="font-bold text-slate-900 dark:text-white">{booking.agency.name}</h3>
+                                        <h3 className="font-bold text-slate-900 dark:text-white">{booking.agencies?.name || 'Agency'}</h3>
                                         <p className="text-sm text-slate-500 dark:text-slate-400">{booking.service}</p>
                                         <div className="flex items-center gap-2 mt-1 text-xs text-primary font-medium">
                                             <span className="material-symbols-outlined text-[14px]">calendar_today</span>
-                                            {new Date(booking.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at {booking.time}
+                                            {formatDate(booking.scheduled_at, { weekday: 'short', month: 'short', day: 'numeric' })}{formatTime(booking.scheduled_at) ? ` at ${formatTime(booking.scheduled_at)}` : ''}
                                         </div>
                                     </div>
                                     <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">
@@ -97,14 +107,14 @@ export default function BookingsPage() {
                                     className="flex items-center gap-4 p-4 bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 opacity-75"
                                 >
                                     <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 font-bold">
-                                        {booking.agency.name[0]}
+                                        {booking.agencies?.name?.[0] || '?'}
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="font-bold text-slate-900 dark:text-white">{booking.agency.name}</h3>
+                                        <h3 className="font-bold text-slate-900 dark:text-white">{booking.agencies?.name || 'Agency'}</h3>
                                         <p className="text-sm text-slate-500 dark:text-slate-400">{booking.service}</p>
                                         <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
                                             <span className="material-symbols-outlined text-[14px]">event_available</span>
-                                            {new Date(booking.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                            {formatDate(booking.scheduled_at, { month: 'short', day: 'numeric' })}
                                         </div>
                                     </div>
                                     <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold rounded-full">

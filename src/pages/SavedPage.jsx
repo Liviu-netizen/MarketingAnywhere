@@ -23,7 +23,8 @@ export default function SavedPage() {
                 console.error("Error fetching saved agencies:", error)
                 setSavedAgencies([])
             } else if (data) {
-                setSavedAgencies(data)
+                const normalized = data.map((item) => item.agencies || item.agency || item)
+                setSavedAgencies(normalized)
             }
             setLoading(false)
         }
@@ -60,7 +61,7 @@ export default function SavedPage() {
                         {savedAgencies.map((agency) => (
                             <Link
                                 key={agency.id}
-                                to={`/ agency / ${agency.id} `}
+                                to={`/agency/${agency.id}`}
                                 className="flex flex-col bg-white dark:bg-surface-dark rounded-xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800"
                             >
                                 <div
@@ -75,7 +76,7 @@ export default function SavedPage() {
                                         <span className="text-xs text-slate-400">({agency.review_count})</span>
                                     </div>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
-                                        {agency.location.city}, {agency.location.country}
+                                        {agency.location?.city || 'Worldwide'}{agency.location?.country ? `, ${agency.location.country}` : ''}
                                     </p>
                                 </div>
                             </Link>
